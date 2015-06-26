@@ -75,6 +75,9 @@ class GMMNode
     m_nh.param<int>(PARAM_NAME_TIME_COLUMN_ID,temp_int,PARAM_DEFAULT_TIME_COLUMN_ID);
     m_time_column_id = temp_int >= 0 ? temp_int : PARAM_DEFAULT_TIME_COLUMN_ID;
 
+    m_nh.param<double>(PARAM_NAME_BIC_PARAMS_WEIGHT,temp_double,PARAM_DEFAULT_BIC_PARAMS_WEIGHT);
+    m_bic_params_weight = temp_double;
+
     m_nh.param<std::string>(PARAM_NAME_MIX_OUTPUT_TOPIC,temp_string,PARAM_DEFAULT_MIX_OUTPUT_TOPIC);
     m_mix_publisher = m_nh.advertise<gaussian_mixture_model::GaussianMixture>(temp_string,2);
   }
@@ -118,14 +121,15 @@ class GMMNode
         continue;
       }
 
-      uint dim = rosdata->layout.dim[1].size;
-      uint ndata = rosdata->layout.dim[0].size;
-      uint size = rosdata->data.size();
+      const uint dim = rosdata->layout.dim[1].size;
+      const uint ndata = rosdata->layout.dim[0].size;
+      const uint size = rosdata->data.size();
 
       if (dim * ndata != size)
       {
         ROS_ERROR("gmm: input array contains %u elements, but that is not the product of individual dimensions %u * %u",
           size,dim,ndata);
+        continue;
       }
 
       // convert input data
@@ -145,10 +149,21 @@ class GMMNode
       for (uint num_gauss = m_gaussian_count_min; num_gauss <= m_gaussian_count_max; num_gauss++)
       {
         ROS_INFO("gmm: attempting gaussian count: %u",num_gauss);
+        if (num_gauss > ndata)
+        {
+          ROS_WARN("gmm: too few points (%u) to fit %u gaussian(s).",ndata,num_gauss);
+          break;
+        }
+
         GMMExpectationMaximization::Ptr gmix(new GMMExpectationMaximization);
         gmix->setTerminationHandler(GMMExpectationMaximization::ITerminationHandler::Ptr(new TerminationHandler));
 
-        gmix->execute(num_gauss,m_time_column_id,eigendata);
+        gmix->setBicParamsWeight(m_bic_params_weight);
+        if (!gmix->execute(num_gauss,m_time_column_id,eigendata))
+        {
+          ROS_WARN("gmm: EM failed.");
+          continue;
+        }
 
         if (ros::isShuttingDown())
           return;
@@ -168,6 +183,12 @@ class GMMNode
         // the bic is rising: exit
         if (bic - best_bic > m_bic_termination_threshold)
           break;
+      }
+
+      if (!best_g)
+      {
+        ROS_ERROR("gmm: couldn't find any GMM.");
+        continue;
       }
 
       ROS_INFO("gmm: chosen gaussian count %u",best_num_gauss);
@@ -231,6 +252,7 @@ class GMMNode
   uint m_time_column_id;
 
   float m_bic_termination_threshold;
+  float m_bic_params_weight;
 
   ros::Subscriber m_data_subscriber;
   ros::Publisher m_mix_publisher;

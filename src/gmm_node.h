@@ -31,19 +31,24 @@
 #ifndef GMM_NODE_H
 #define GMM_NODE_H
 
+// minimum number of gaussians
 #define PARAM_NAME_GAUSSIAN_COUNT_MIN    "gaussian_count_min"
 #define PARAM_DEFAULT_GAUSSIAN_COUNT_MIN 1
 
-// BIC search will terminate when the gaussian count reaches this OR (see below)
+// BIC search will terminate when the gaussian count reaches this OR...
 #define PARAM_NAME_GAUSSIAN_COUNT_MAX    "gaussian_count_max"
 #define PARAM_DEFAULT_GAUSSIAN_COUNT_MAX 10
-// when the current BIC - lower BIC is lower than this
+// ...when the current BIC - lower BIC is higher than this
 #define PARAM_NAME_BIC_TERM_THRESHOLD    "bic_termination_threshold"
 #define PARAM_DEFAULT_BIC_TERM_THRESHOLD (double(1000000.0))
 
-// the algorithm will initialize splitting in this column
+// the algorithm will initialize the EM model by splitting this column
 #define PARAM_NAME_TIME_COLUMN_ID        "time_column_id"
 #define PARAM_DEFAULT_TIME_COLUMN_ID     0
+
+// increase this to get more gaussians, decrease to get less
+#define PARAM_NAME_BIC_PARAMS_WEIGHT     "bic_params_weight"
+#define PARAM_DEFAULT_BIC_PARAMS_WEIGHT  1.0
 
 // input topics
 // this is a Float32MultiArray
@@ -53,7 +58,7 @@
 #define PARAM_DEFAULT_DATA_INPUT_TOPIC   "/gmm/data"
 
 // output topics
-// outputs a gmm/GaussianMixture.msg
+// outputs a gaussian_mixture_model/GaussianMixture.msg
 #define PARAM_NAME_MIX_OUTPUT_TOPIC      "mix_output_topic"
 #define PARAM_DEFAULT_MIX_OUTPUT_TOPIC   "/gmm/mix"
 

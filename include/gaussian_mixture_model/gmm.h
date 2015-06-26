@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Copyright (c) 2014, Riccardo Monica
  *   RIMLab, Department of Information Engineering, University of Parma, Italy
  *   http://www.rimlab.ce.unipr.it/
@@ -82,7 +82,8 @@ class GMMExpectationMaximization
   uint execute(uint num_gaussians,uint time_column,const MatrixX & data);
 
   // initialize by splitting data in equal intervals of the column with id col
-  void autoInitializeByEqualIntervals(uint num_gaussians,uint col,const MatrixX & data);
+  // false if error
+  bool autoInitializeByEqualIntervals(uint num_gaussians,uint col,const MatrixX & data);
   /// execute the algorithm on the data
   /// @param data the data
   /// @returns the number of iterations performed (0 if error)
@@ -91,6 +92,7 @@ class GMMExpectationMaximization
   // index that shows the goodness of the current mixture to represent the data
   // the lower the better
   Real getBIC(const MatrixX & data) const;
+  void setBicParamsWeight(Real imp) {m_bic_params_weight = imp; }
 
   const VectorXVector & getMeans() const {return m_means; }
   const MatrixXVector & getCovariances() const {return m_covs; }
@@ -109,6 +111,7 @@ class GMMExpectationMaximization
   uint m_max_iterations;
   Real m_epsilon;
   Real m_termination_threshold;
+  Real m_bic_params_weight;
 
   VectorXVector m_means;
   MatrixXVector m_covs;

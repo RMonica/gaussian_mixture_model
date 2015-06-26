@@ -29,6 +29,7 @@
  */
 
 #include <gaussian_mixture_model/gmm.h>
+#include <cmath>
 
 #define EPSILON (1e-5)
 #define MAXITER 200
@@ -39,6 +40,7 @@ GMMExpectationMaximization::GMMExpectationMaximization()
   m_max_iterations = MAXITER;
   m_epsilon = EPSILON;
   m_termination_threshold = TERMINATION_THRESHOLD;
+  m_bic_params_weight = 1.0;
 }
 
 GMMExpectationMaximization::Real GMMExpectationMaximization::gauss(const VectorX & mean,
@@ -60,7 +62,8 @@ GMMExpectationMaximization::Real GMMExpectationMaximization::gauss(const VectorX
 
 GMMExpectationMaximization::uint GMMExpectationMaximization::execute(uint num_gaussians,uint time_column,const MatrixX & data)
 {
-  autoInitializeByEqualIntervals(num_gaussians,time_column,data);
+  if (!autoInitializeByEqualIntervals(num_gaussians,time_column,data))
+    return 0;
   return execute(data);
 }
 
@@ -125,10 +128,13 @@ GMMExpectationMaximization::uint GMMExpectationMaximization::execute(const Matri
   return it_num;
 }
 
-void GMMExpectationMaximization::autoInitializeByEqualIntervals(uint num_gaussians,uint col,const MatrixX & dataset)
+bool GMMExpectationMaximization::autoInitializeByEqualIntervals(uint num_gaussians,uint col,const MatrixX & dataset)
 {
   uint data_count = dataset.rows();
   uint dim = dataset.cols();
+
+  if (!data_count || !dim)
+    return false;
 
   std::vector<std::vector<uint> > index(num_gaussians);
   for(uint g = 0; g < num_gaussians; g++)
@@ -190,6 +196,8 @@ void GMMExpectationMaximization::autoInitializeByEqualIntervals(uint num_gaussia
     m_covs[g] /= Real(popsize);
     m_covs[g] += MatrixX::Identity(dim,dim) * m_epsilon;
   }
+
+  return true;
 }
 
 GMMExpectationMaximization::Real GMMExpectationMaximization::expectation(const VectorX & pt) const
@@ -212,7 +220,7 @@ GMMExpectationMaximization::Real GMMExpectationMaximization::getBIC(const Matrix
   Real sum = 0.0;
   
   for(uint i = 0; i < data_count; i++)
-    sum += log(expectation(dataset.row(i).transpose()));
+    sum += std::log(expectation(dataset.row(i).transpose()));
 
-  return -sum + (number_of_parameters / 2.0) * log(Real(data_count));
+  return -sum + m_bic_params_weight * (number_of_parameters / 2.0) * std::log(Real(data_count));
 }
