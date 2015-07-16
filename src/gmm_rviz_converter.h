@@ -54,15 +54,16 @@
 #define PARAM_NAME_RVIZ_NAMESPACE  "rviz_namespace"
 #define PARAM_DEFAULT_RVIZ_NAMESPACE "gmm_rviz_converter"
 
-// this parameter must contain 3 space separated values, for each dimension x, y, z
+// this parameter must contain 3 space-separated values, for each dimension x, y, z
 #define PARAM_NAME_COORD_MASK     "coordinate_mask"
+// in the default value, the three values are "index 1", "index 2" and "index 3"
 #define PARAM_DEFAULT_COORD_MASK  "index 1 index 2 index 3"
 #define PARAM_CMD_CONST            "const"
-// if the value is in the format "const r", where r is real
+// if the value is in the format "const r", where r is a real number
 //   the coordinate is constant at value r
 #define PARAM_CMD_INDEX            "index"
 // if the value is in the format "index n", where n is a non-negative integer,
-//   the coordinate will be read from the gaussian mixture at position n
+//   the coordinate will be read from the mean of the gaussian, at index n
 
 // This is the number of coordinates in 3D space. Hope this won't change anytime soon.
 #define NUM_OUTPUT_COORDINATES 3
